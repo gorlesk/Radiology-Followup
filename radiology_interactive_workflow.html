@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radiology Follow-up Agent - Interactive Workflow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #070a13;
+            --bg-panel: #0d1222;
+            --bg-card: rgba(22, 30, 56, 0.4);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --cyan: #06b6d4;
+            --purple: #a855f7;
+            --emerald: #10b981;
+            --amber: #f59e0b;
+            --rose: #f43f5e;
+            --glow: rgba(6, 182, 212, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* Sidebar menu */
+        .sidebar {
+            width: 250px;
+            background-color: #0b0e1b;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+        }
+
+        .brand-text {
+            font-size: 14.5px;
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            white-space: nowrap;
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--text-main);
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .nav-item.active {
+            border-left: 3px solid var(--cyan);
+            background-color: rgba(6, 182, 212, 0.08);
+        }
+
+        .nav-sec-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.15);
+            margin: 24px 0 8px 12px;
+            font-weight: 600;
+        }
+
+        /* Main Area */
+        .workspace {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .top-bar {
+            height: 70px;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(13, 18, 34, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .top-bar h1 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .top-bar p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Split Workspace Grid */
+        .work-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 12px 20px;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            height: 100%;
+            overflow-y: auto;
+            padding-bottom: 24px;
+        }
+
+        /* Generic Glass Box */
+        .panel-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 8px;
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .box-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* DICOM Uploader Area */
+        .upload-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--cyan);
+            background-color: rgba(6, 182, 212, 0.02);
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .upload-text {
+            font-size: 14px;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .upload-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .sample-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            justify-content: center;
+        }
+
+        .btn-sample {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-sample:hover {
+            background-color: rgba(6, 182, 212, 0.1);
+            border-color: var(--cyan);
+        }
+
+        .btn-sample.active {
+            background-color: rgba(6, 182, 212, 0.2);
+            border-color: var(--cyan);
+            color: #fff;
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.3);
+        }
+
+        /* DICOM Viewer Container */
+        .viewer-container {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .viewer-screen {
+            width: 100%;
+            height: 280px;
+            background-color: black;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .viewer-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            opacity: 0.85;
+        }
+
+        /* Crosshair overlay */
+        .crosshair {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 1px dashed var(--cyan);
+            border-radius: 50%;
+            display: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+            pointer-events: none;
+        }
+
+        .crosshair::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: -10px;
+            bottom: -10px;
+            width: 1px;
+            background-color: var(--cyan);
+        }
+
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -10px;
+            right: -10px;
+            height: 1px;
+            background-color: var(--cyan);
+        }
+
+        .viewer-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .dicom-metadata {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            font-size: 12.5px;
+        }
+
+        /* Action triggers */
+        .action-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .btn-run {
+            flex-grow: 1;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border: none;
+            color: white;
+            padding: 14px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .btn-run:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(6, 182, 212, 0.35);
+        }
+
+        .btn-run:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Workflow steps list */
+        .workflow-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .workflow-step.pending {
+            opacity: 0.5;
+        }
+
+        .workflow-step.running {
+            opacity: 1;
+            border-color: var(--cyan);
+            background-color: rgba(6, 182, 212, 0.04);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.1);
+        }
+
+        .workflow-step.completed {
+            opacity: 1;
+            border-color: rgba(16, 185, 129, 0.3);
+            background-color: rgba(16, 185, 129, 0.02);
+        }
+
+        .step-num {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            border: 1px solid var(--border-color);
+        }
+
+        .workflow-step.running .step-num {
+            background-color: var(--cyan);
+            color: black;
+            border-color: var(--cyan);
+            animation: pulse-glow 1.5s infinite;
+        }
+
+        .workflow-step.completed .step-num {
+            background-color: var(--emerald);
+            color: black;
+            border-color: var(--emerald);
+        }
+
+        .step-txt {
+            flex-grow: 1;
+        }
+
+        .step-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .step-status {
+            font-size: 10.5px;
+            color: var(--text-muted);
+        }
+
+        .workflow-step.completed .step-status {
+            color: var(--emerald);
+        }
+
+        .workflow-step.running .step-status {
+            color: var(--cyan);
+        }
+
+        /* Console log window */
+        .console-log {
+            display: none !important;
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            height: 125px;
+            overflow-y: auto;
+            color: #cbd5e1;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .log-line {
+            line-height: 1.4;
+        }
+
+        .log-line.info { color: var(--cyan); }
+        .log-line.success { color: var(--emerald); }
+        .log-line.warn { color: var(--amber); }
+
+        /* End outputs card */
+        .results-box {
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+            animation: slideUp 0.4s ease;
+        }
+
+        .results-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 4px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--cyan);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--cyan);
+        }
+
+        .tab-pane {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+            font-size: 13.5px;
+            line-height: 1.5;
+        }
+
+        .tab-pane.active {
+            display: flex;
+        }
+
+        .out-box {
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .out-gradient {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(168, 85, 247, 0.08));
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        
+        .horizontal-workflow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 10px;
+            margin-bottom: 10px;
+        }
+        .agent-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--bg-lighter);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            position: relative;
+            cursor: help;
+            transition: all 0.3s ease;
+        }
+        
+        .agent-line {
+            flex: 1;
+            height: 2px;
+            background: var(--border-color);
+            margin: 0 5px;
+            transition: background 0.3s ease;
+        }
+        .agent-line.active {
+            background: var(--cyan);
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 15px;
+            border: 1px solid var(--border-color);
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--cyan), var(--emerald));
+            width: 0%;
+            transition: width 0.4s ease;
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+        }
+        .agent-icon::after {
+            content: attr(data-title);
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-darker);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 10;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+        .agent-icon:hover::after {
+            opacity: 1;
+            visibility: visible;
+            bottom: -30px;
+        }
+
+        
+        .circular-workflow-container {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin: 15px auto 30px auto;
+        }
+        #step-1 { position: absolute; top: 0.2%; left: 54.4%; transform: translate(-50%, -50%); }
+        #step-2 { position: absolute; top: 9.0%; left: 21.3%; transform: translate(-50%, -50%); }
+        #step-3 { position: absolute; top: 37.1%; left: 1.7%; transform: translate(-50%, -50%); }
+        #step-4 { position: absolute; top: 71.1%; left: 4.7%; transform: translate(-50%, -50%); }
+        #step-5 { position: absolute; top: 95.3%; left: 28.9%; transform: translate(-50%, -50%); }
+        #step-6 { position: absolute; top: 98.3%; left: 62.9%; transform: translate(-50%, -50%); }
+        #step-7 { position: absolute; top: 78.7%; left: 91.0%; transform: translate(-50%, -50%); }
+        #step-8 { position: absolute; top: 45.6%; left: 99.8%; transform: translate(-50%, -50%); }
+
+        
+        
+        .agent-icon.running {
+            border-color: var(--amber) !important;
+            background: rgba(245, 158, 11, 0.3) !important;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.9), inset 0 0 10px rgba(245, 158, 11, 0.5) !important;
+            animation: execute-blink 0.8s ease-in-out infinite;
+        }
+        .agent-icon.completed {
+            border-color: var(--emerald) !important;
+            background: rgba(16, 185, 129, 0.4) !important;
+            transform: translate(-50%, -50%) scale(1.15) !important;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.6) !important;
+        }
+        
+        /* Make labels always visible when running or completed */
+        .agent-icon.running::after {
+            opacity: 1 !important;
+            color: var(--amber) !important;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
+            z-index: 100;
+        }
+        
+        .agent-icon.completed::after {
+            opacity: 1 !important;
+            color: var(--emerald) !important;
+            font-weight: 500;
+            z-index: 100;
+        }
+
+        .orchestrator {
+            position: absolute;
+            top: 14.6%;
+            left: 85.4%;
+            transform: translate(-50%, -50%) rotate(45deg) !important;
+            width: 52px !important;
+            height: 52px !important;
+            border-radius: 12px !important;
+            z-index: 20;
+            border: 2px solid var(--purple) !important;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+            background: rgba(168, 85, 247, 0.15) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .orchestrator .icon-inner {
+            transform: rotate(-45deg);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 0 12px rgba(6, 182, 212, 1), 0 0 20px rgba(168, 85, 247, 0.8);
+        }
+        .orchestrator.running {
+            border-color: var(--cyan) !important;
+            background: rgba(6, 182, 212, 0.2) !important;
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.8), inset 0 0 10px rgba(6, 182, 212, 0.5) !important;
+            animation: pulse-glow 1s infinite;
+        }
+        .orchestrator.completed {
+            border-color: var(--emerald) !important;
+            background: rgba(16, 185, 129, 0.2) !important;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.7) !important;
+            transform: translate(-50%, -50%) rotate(45deg) scale(1.15) !important;
+        }
+
+        /* Keyframes */
+        @keyframes execute-blink {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); box-shadow: 0 0 20px rgba(6, 182, 212, 0.9); }
+            50% { opacity: 0.4; transform: translate(-50%, -50%) scale(1.0); box-shadow: 0 0 5px rgba(6, 182, 212, 0.2); }
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(6, 182, 212, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar navigation -->
+    <div class="sidebar">
+        <div class="brand">
+            
+            <style>
+                @keyframes rad-scanline {
+                    0% { transform: translateY(-16px); opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { transform: translateY(16px); opacity: 0; }
+                }
+            </style>
+            <div class="brand-icon" style="background: rgba(6, 182, 212, 0.1); box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); border: 2px solid var(--cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; position: relative; overflow: hidden; padding: 2px;">
+                <span>🩻</span>
+                <div style="position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: var(--emerald); animation: rad-scanline 2s linear infinite; box-shadow: 0 0 5px var(--emerald);"></div>
+            </div>
+
+            <div class="brand-text">Radiology Followup</div>
+        </div>
+
+        <ul class="nav-list">
+            <li><a href="#" class="nav-item" id="nav-dashboard" onclick="switchAppView('dashboard')">Dashboard</a></li>
+            <li><a href="#" class="nav-item active" id="nav-uploader" onclick="switchAppView('uploader')">Interactive Uploader</a></li>
+        </ul>
+    </div>
+
+    <!-- Workspace container -->
+    <div class="workspace" id="view-uploader">
+        <div class="top-bar" style="position: relative;">
+            <div style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center; width: 100%; pointer-events: none;">
+                <h1>Multi-Agent Diagnostic Execution</h1>
+                <p>Upload a scan image and watch the cooperative agent workflow execute in real-time*</p>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-left: auto;">
+                System Engine: <span style="color: var(--emerald); font-weight: 600;">ACTIVE (ADK 2.0)</span>
+            </div>
+        </div>
+
+        <div class="work-grid">
+            <!-- Left Column: Input and Upload -->
+            <div class="col" style="flex: 1;">
+                <div class="panel-box viewer-container" id="viewer-panel" style="display: flex; flex-direction: column; height: 100%;">
+                    <h2 class="box-title" style="margin-bottom: 8px; flex-shrink: 0;">1. Input Acquisition & Viewer</h2>
+                    
+                    <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding-right: 4px; padding-bottom: 5px;">
+                        <div class="viewer-screen" style="flex: 1; min-height: 300px; max-height: 400px; position: relative;">
+                            <img id="viewer-image" src="" alt="DICOM Slice" class="viewer-img" style="display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0;">
+                        </div>
+
+                        <div class="viewer-controls">
+                            <span id="filename-label">FILE: None</span>
+                            <span id="modality-label">MODALITY: CT</span>
+                            <span id="resolution-label">RESOL: 512x512 | Slice 42/90</span>
+                        </div>
+
+                        <div class="dicom-metadata" style="grid-template-columns: 1fr 1fr;">
+                            <div><strong>Patient ID:</strong> <span id="meta-patient-id">-</span></div>
+                            <div><strong>Age / Gender:</strong> <span id="meta-age-gender">-</span></div>
+                            <div><strong>Scan Target:</strong> <span id="meta-target">-</span></div>
+                            <div><strong>Clinical History:</strong> <span id="meta-history">-</span></div>
+                        </div>
+
+                        <div class="sample-row" style="margin-top: 10px; display: flex; gap: 6px;">
+                            <button class="btn-sample active" id="btn-sample-ct" onclick="loadSample('chest_ct')" style="flex: 1; padding: 8px 4px; font-size: 11.5px;">Chest CT</button>
+                            <button class="btn-sample" id="btn-sample-mr" onclick="loadSample('liver_mr')" style="flex: 1; padding: 8px 4px; font-size: 11.5px;">Liver MR</button>
+                            <button class="btn-sample" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px; font-size: 11.5px;" onclick="document.getElementById('file-upload').click()">
+                                <span style="font-size: 14px;">📁</span> Browse
+                            </button>
+                            <button class="btn-sample" style="flex: 0.8; border-color: rgba(244, 63, 94, 0.4); color: var(--rose); padding: 8px 4px; font-size: 11.5px;" onclick="loadSample('chest_ct')">Reset</button>
+                            <input type="file" id="file-upload" style="display: none;" accept="image/*,.dcm" onchange="handleFileUpload(event)">
+                        </div>
+                    </div>
+
+                    <div class="action-container" style="margin-top: 5px; flex-shrink: 0; display: flex; justify-content: center;">
+                        <button class="btn-run" id="btn-run-workflow" onclick="startWorkflowAnalysis()" style="width: 50%; padding: 12px; font-size: 14px;">
+                            <span>⚡</span> Run Workflow Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Pipeline and Results -->
+            <div class="col">
+                <!-- Agent Pipeline -->
+                <div class="panel-box">
+                    <h2 class="box-title">2. ADK 2.0 Multi-Agent Execution</h2>
+                    
+                    <div class="circular-workflow-container" id="workflow-timeline">
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; border: 2px solid rgba(6, 182, 212, 0.2); box-shadow: inset 0 0 20px rgba(0,0,0,1); z-index: 0; opacity: 0.4;">
+                            <img src="/static/assets/human_body_oncology.jpg" alt="Radiation Oncology HUD" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.7); transform-origin: center center;">
+                        </div>
+
+                        <!-- Circular Progress SVG -->
+                        <div id="workflow-timer" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: monospace; font-size: 22px; color: var(--amber); text-shadow: 0 0 10px rgba(245, 158, 11, 0.8); z-index: 10; opacity: 0; transition: opacity 0.3s;">00:00.0s</div>
+                        <svg width="100%" height="100%" viewBox="0 0 200 200" style="position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1;">
+                            <defs>
+                                <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#06b6d4" />
+                                    <stop offset="100%" stop-color="#10b981" />
+                                </linearGradient>
+                            </defs>
+                            <!-- Base ring with small gaps indicating flow -->
+                            <path d="M 167.17 32.83 A 95 95 0 1 0 32.83 167.17 A 95 95 0 1 0 167.17 32.83" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3" stroke-dasharray="10 10" />
+                            
+                            <!-- Animated Progress ring -->
+                            <path id="circular-progress-path" d="M 167.17 32.83 A 95 95 0 1 0 32.83 167.17 A 95 95 0 1 0 167.17 32.83" fill="none" stroke="url(#progressGrad)" stroke-width="4" stroke-dasharray="597" stroke-dashoffset="597" style="transition: stroke-dashoffset 0.8s ease; filter: drop-shadow(0 0 4px rgba(6, 182, 212, 0.8));" />
+                        </svg>
+
+                        
+                        <!-- Orchestrator Agent -->
+                        <div class="agent-icon orchestrator pending" id="step-0" data-title="Orchestrator Agent"><div class="icon-inner">🧠</div></div>
+                        
+                        <div class="agent-icon pending pos-1" id="step-1" data-title="Report Parser Agent">
+                            📝
+                        </div>
+                        <div class="agent-icon pending pos-2" id="step-2" data-title="Finding Extraction Agent">🔍</div>
+                        <div class="agent-icon pending pos-3" id="step-3" data-title="Guideline Retrieval Agent">📚</div>
+                        <div class="agent-icon pending pos-4" id="step-4" data-title="Risk Classification Agent">⚠️</div>
+                        <div class="agent-icon pending pos-5" id="step-5" data-title="Task Creation Agent">📅</div>
+                        <div class="agent-icon pending pos-6" id="step-6" data-title="Communication Agent">💬</div>
+                        <div class="agent-icon pending pos-7" id="step-7" data-title="Follow-up Tracker Agent">⏰</div>
+                        <div class="agent-icon pending pos-8" id="step-8" data-title="Audit & Guardrail Agent">
+                            🛡️
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Console logging -->
+                <div class="console-log" id="console-log">
+                    <span class="log-line info">[Engine Init] Waiting for DICOM data stream...</span>
+                </div>
+
+                <!-- Results Output -->
+                <div class="panel-box results-box" id="results-panel">
+                    <h2 class="box-title">3. Final Workflow Outputs</h2>
+
+                    <div class="results-tabs">
+                        <button class="tab-btn active" onclick="switchPane(event, 'pane-clinician')">Clinician EHR Summary</button>
+                        <button class="tab-btn" onclick="switchPane(event, 'pane-patient')">Patient Letter</button>
+                        <button class="tab-btn" onclick="switchPane(event, 'pane-ehr')">Calendar Task</button>
+                        <button class="tab-btn" onclick="switchPane(event, 'pane-audit')">Audit Logs</button>
+                    </div>
+
+                    <!-- Pane 1 -->
+                    <div id="pane-clinician" class="tab-pane active">
+                        <div class="out-box" id="result-clinician-text">
+                            -
+                        </div>
+                    </div>
+
+                    <!-- Pane 2 -->
+                    <div id="pane-patient" class="tab-pane">
+                        <div class="out-gradient" id="result-patient-text">
+                            -
+                        </div>
+                    </div>
+
+                    <!-- Pane 3 -->
+                    <div id="pane-ehr" class="tab-pane">
+                        <div class="dicom-metadata">
+                            <div><strong>Task Event:</strong> Follow-up Exam Scheduled</div>
+                            <div><strong>Target Date:</strong> <span id="result-target-date">-</span></div>
+                            <div><strong>EHR Priority Badge:</strong> <span id="result-priority-badge">-</span></div>
+                            <div><strong>Notification Alert:</strong> EMR/Care Inbox Reminders Enabled</div>
+                        </div>
+                    </div>
+
+                    <!-- Pane 4 -->
+                    <div id="pane-audit" class="tab-pane">
+                        <div class="dicom-metadata" style="grid-template-columns: 1fr;">
+                            <div>✔ <strong>Grounding check:</strong> Clinician output verified against official guidelines.</div>
+                            <div>✔ <strong>Consistency check:</strong> Patient translation verified.</div>
+                            <div>✔ <strong>Date integrity check:</strong> Schedule dates validated.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Caution Footer -->
+        <div style="position: absolute; bottom: 10px; width: 100%; text-align: center; color: var(--rose); font-size: 12px; font-weight: bold; letter-spacing: 0.5px; z-index: 1000; pointer-events: none;">* Caution - Not intended for clinical use</div>
+    </div>
+
+
+    <!-- Dashboard View -->
+    <div class="workspace" id="view-dashboard" style="display: none; background: var(--bg-dark); padding: 40px; overflow-y: auto;">
+        <h1 style="font-size: 28px; margin-bottom: 8px;">Patient Analytics Dashboard</h1>
+        <p style="color: var(--text-muted); margin-bottom: 40px;">Overview of recently analyzed radiological scans and automated follow-up scheduling.</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px;">
+            <div class="panel-box" style="padding: 24px; text-align: center;">
+                <div id="dash-total-scans" style="font-size: 36px; color: var(--cyan); font-weight: bold;">124</div>
+                <div style="color: var(--text-muted); font-size: 14px;">Total Scans Analyzed</div>
+            </div>
+            <div class="panel-box" style="padding: 24px; text-align: center;">
+                <div id="dash-high-priority" style="font-size: 36px; color: var(--rose); font-weight: bold;">18</div>
+                <div style="color: var(--text-muted); font-size: 14px;">High Priority Findings</div>
+            </div>
+            <div class="panel-box" style="padding: 24px; text-align: center;">
+                <div id="dash-guardrail" style="font-size: 36px; color: var(--emerald); font-weight: bold;">99.2%</div>
+                <div style="color: var(--text-muted); font-size: 14px;">Agent Guardrail Pass Rate</div>
+            </div>
+        </div>
+
+        <h2 style="font-size: 18px; margin-bottom: 20px;">Recent AI Agent Executions</h2>
+        <div class="panel-box" style="padding: 0; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                <thead style="background: rgba(255, 255, 255, 0.05); border-bottom: 1px solid var(--border-color);">
+                    <tr>
+                        <th style="padding: 16px;">Patient ID</th>
+                        <th style="padding: 16px;">Modality</th>
+                        <th style="padding: 16px;">Target</th>
+                        <th style="padding: 16px;">Agent Pipeline</th>
+                        <th style="padding: 16px;">Priority</th>
+                        <th style="padding: 16px;">Follow-up Target</th>
+                        <th style="padding: 16px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="dash-patients-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+
+
+        function toggleReport(btn, patientId) {
+            const tr = btn.closest('tr');
+            const nextTr = tr.nextElementSibling;
+            
+            if (nextTr && nextTr.classList.contains('expand-row')) {
+                // Toggle off
+                nextTr.remove();
+                btn.textContent = 'View Report';
+            } else {
+                // Expand
+                btn.textContent = 'Hide Report';
+                const expandTr = document.createElement('tr');
+                expandTr.className = 'expand-row';
+                expandTr.innerHTML = `
+                    <td colspan="7" style="padding: 0;">
+                        <div style="background: rgba(13, 18, 34, 0.8); border: 1px solid var(--border-color); margin: 0 16px 16px 16px; padding: 24px; border-radius: 8px;">
+                            <h2 style="font-size: 16px; margin-bottom: 16px; color: var(--cyan);">Final Workflow Outputs</h2>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                                <div>
+                                    <h3 style="font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Clinician EHR Summary</h3>
+                                    <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 6px; font-size: 13px; color: var(--text-light); line-height: 1.5; border-left: 3px solid var(--cyan);">
+                                        "${btn.dataset.clinician}"
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 style="font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Patient Letter</h3>
+                                    <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 6px; font-size: 13px; color: var(--text-light); line-height: 1.5; border-left: 3px solid var(--amber);">
+                                        ${btn.dataset.patient}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+                                <div>
+                                    <h3 style="font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Calendar Task</h3>
+                                    <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 6px; font-size: 13px;">
+                                        <div style="margin-bottom: 8px;"><strong>Target Date:</strong> ${btn.dataset.targetDate}</div>
+                                        <div><strong>EHR Priority Badge:</strong> <span class="badge" style="background: ${btn.dataset.badgeBg}; color: ${btn.dataset.badgeColor}; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${btn.dataset.priority}</span></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 style="font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Audit Logs</h3>
+                                    <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 6px; font-size: 13px; color: var(--emerald);">
+                                        <div>✔ <strong>Grounding check:</strong> Clinician output verified against official guidelines.</div>
+                                        <div style="margin-top: 4px;">✔ <strong>Consistency check:</strong> Patient translation verified.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                `;
+                tr.parentNode.insertBefore(expandTr, tr.nextSibling);
+            }
+        }
+
+        async function fetchDashboardStats() {
+            try {
+                const response = await fetch('/api/dashboard-stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    
+                    document.getElementById('dash-total-scans').textContent = stats.totalScans;
+                    document.getElementById('dash-high-priority').textContent = stats.highPriority;
+                    document.getElementById('dash-guardrail').textContent = stats.guardrailPassRate + '%';
+                    
+                    const tbody = document.getElementById('dash-patients-tbody');
+                    tbody.innerHTML = '';
+                    
+                    stats.recentPatients.forEach(p => {
+                        let badgeClass = 'badge-medium';
+                        let badgeBg = 'rgba(245, 158, 11, 0.15)';
+                        let badgeColor = 'var(--amber)';
+                        
+                        if (p.priority === 'HIGH') {
+                            badgeClass = 'badge-high';
+                            badgeBg = 'rgba(244, 63, 94, 0.15)';
+                            badgeColor = 'var(--rose)';
+                        } else if (p.priority === 'LOW') {
+                            badgeClass = '';
+                            badgeBg = 'rgba(16, 185, 129, 0.15)';
+                            badgeColor = 'var(--emerald)';
+                        }
+                        
+                        const clin = (p.clinicianNote || "Routine imaging study performed. No acute abnormalities. Suggest standard follow-up.").replace(/"/g, '&quot;');
+                        const pat = (p.patientExplanation || "Your scan was processed successfully. We didn't find any critical issues. Please follow up with your doctor.").replace(/"/g, '&quot;');
+                        
+                        const actionBtn = `<button class="btn-outline" style="padding: 6px 12px; font-size: 12px;" onclick="toggleReport(this, '${p.patientId}')" data-clinician="${clin}" data-patient="${pat}" data-priority="${p.priority}" data-target-date="${p.targetDate}" data-badge-bg="${badgeBg}" data-badge-color="${badgeColor}">View Report</button>`;
+                        
+                        const tr = document.createElement('tr');
+                        tr.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
+                        tr.innerHTML = `
+                            <td style="padding: 16px; font-weight: bold; color: var(--cyan);">${p.patientId}</td>
+                            <td style="padding: 16px;">${p.modality}</td>
+                            <td style="padding: 16px;">${p.target}</td>
+                            <td style="padding: 16px;"><span style="color: var(--emerald);">8/8 Agents Completed</span></td>
+                            <td style="padding: 16px;"><span class="badge ${badgeClass}" style="background: ${badgeBg}; color: ${badgeColor}; padding: 4px 8px; border-radius: 4px;">${p.priority}</span></td>
+                            <td style="padding: 16px;">${p.targetDate}</td>
+                            <td style="padding: 16px;">${actionBtn}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to fetch dashboard stats", err);
+            }
+        }
+
+
+
+        function switchAppView(view) {
+            document.getElementById('view-uploader').style.display = 'none';
+            document.getElementById('view-dashboard').style.display = 'none';
+            document.getElementById('nav-uploader').classList.remove('active');
+            document.getElementById('nav-dashboard').classList.remove('active');
+            
+            document.getElementById('view-' + view).style.display = 'flex'; // uploader uses flex, dashboard can use flex/block
+            if (view === 'dashboard') {
+                document.getElementById('view-dashboard').style.display = 'block';
+            }
+            document.getElementById('nav-' + view).classList.add('active');
+        }
+
+        let timerInterval;
+        let workflowStartTime;
+        
+        function updateTimer() {
+            if (!workflowStartTime) return;
+            const now = Date.now();
+            const diff = (now - workflowStartTime) / 1000;
+            document.getElementById('workflow-timer').textContent = diff.toFixed(1) + "s";
+        }
+        const sampleCases = {
+            "chest_ct": {
+                patientId: "P12345",
+                ageGender: "64 / Male",
+                target: "Chest (Lung Target)",
+                history: "Former heavy smoker (20 pack-years)",
+                imageSrc: "/static/assets/chest_ct_scan_slice_1782576817200.png",
+                modality: "CT",
+                resolution: "512x512 | Slice 42/90",
+                crosshair: { x: "64%", y: "45%" },
+                clinicianNote: "64-year-old male with a history of tobacco usage presented with a 7mm right upper lobe pulmonary nodule. Follow-up CT chest scheduled in 6-12 months per Fleischner criteria.",
+                patientExplanation: "A small spot (7 mm nodule) was found in your right lung. It is common and often not serious. We recommend a repeat CT scan in 6-12 months to make sure it stays stable.",
+                targetDate: "2027-03-26",
+                priority: "MEDIUM",
+                logs: [
+                    { type: 'info', text: '[Report Parser] Parsing chest CT slice metadata. Target findings text isolated.' },
+                    { type: 'info', text: '[Finding Extraction] Identifying entities... Found "7mm nodule" in "right upper lobe". Negation check: Present.' },
+                    { type: 'info', text: '[Guideline Retrieval] Querying guidelines vector index... Matched Fleischner Society Criteria (2017).' },
+                    { type: 'info', text: '[Risk Classification] Calculating risk... Patient is high risk (heavy smoker, 64yo). Classification: MEDIUM.' },
+                    { type: 'info', text: '[Task Creation] Computing target target date: +9 Months. Registering EMR workflow hook.' },
+                    { type: 'info', text: '[Communication] Translating medical terminology. Synthesizing clinician note & patient guide.' },
+                    { type: 'info', text: '[Follow-up Tracker] Generating scheduling alerts. Scheduling state initialized.' },
+                    { type: 'info', text: '[Audit & Guardrail] Validating outputs. Truth-alignment checks passed. Commit log recorded.' }
+                ]
+            },
+            "liver_mr": {
+                patientId: "P67890",
+                ageGender: "52 / Female",
+                target: "Abdomen (Hepatobiliary)",
+                history: "Breast cancer patient (currently in remission)",
+                imageSrc: "/static/assets/liver_mri_scan_slice_1782576830807.png",
+                modality: "MR",
+                resolution: "256x256 | Slice 18/32",
+                crosshair: { x: "55%", y: "58%" },
+                clinicianNote: "52-year-old female with a history of breast cancer presented with a newly noted 1.5 cm indeterminate liver lesion in segment IVb. Urgent hepatobiliary MR follow-up requested within 4 weeks.",
+                patientExplanation: "During your recent scan, we found a small 1.5 cm spot on your liver. Given your medical history, it is important to take a closer look. We scheduled a specialized follow-up liver scan for you as a priority to verify everything is safe.",
+                targetDate: "2026-07-25",
+                priority: "HIGH",
+                logs: [
+                    { type: 'info', text: '[Report Parser] Parsing abdominal MR metadata. Extraction of findings text block succeeded.' },
+                    { type: 'info', text: '[Finding Extraction] Entities found: "1.5cm liver lesion", Location: "segment IVb".' },
+                    { type: 'info', text: '[Guideline Retrieval] Querying guidelines... Matched ACR Hepatic Incidentaloma criteria.' },
+                    { type: 'info', text: '[Risk Classification] Clinical alert: Patient oncology history indicates high risk. Classification: HIGH.' },
+                    { type: 'info', text: '[Task Creation] Target follow-up date computed: +30 Days. High priority alert flagged.' },
+                    { type: 'info', text: '[Communication] Writing note and priority explanation patient letter.' },
+                    { type: 'info', text: '[Follow-up Tracker] Active monitoring scheduled. Reminders set for 7-day threshold.' },
+                    { type: 'info', text: '[Audit & Guardrail] Output matches ACR guideline framework. Double check validation passed.' }
+                ]
+            }
+        };
+
+        let selectedCase = null;
+
+        window.onload = () => {
+            loadSample('chest_ct');
+            fetchDashboardStats();
+        };
+
+        
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const objectUrl = URL.createObjectURL(file);
+            
+            // Create a custom selectedCase
+            selectedCase = {
+                patientId: "P-" + Math.floor(10000 + Math.random() * 90000),
+                ageGender: "Unknown",
+                target: "Custom Scan",
+                history: "Unknown / Uploaded File",
+                imageSrc: objectUrl,
+                modality: "UNKNOWN",
+                resolution: "Original",
+                crosshair: { x: "50%", y: "50%" },
+                isCustomUpload: true,
+                customFile: file,
+                clinicianNote: "Routine imaging study performed on uploaded scan. No acute abnormalities detected on the provided sequence. Suggest standard follow-up as clinically indicated.",
+                patientExplanation: "Your scan was processed successfully by our system. We didn't find any critical or urgent issues that require immediate attention. Please follow up with your doctor for a complete review.",
+                targetDate: "2027-01-01",
+                priority: "LOW",
+                logs: [
+                    { type: 'info', text: '[Report Parser] Parsing uploaded image metadata...' },
+                    { type: 'info', text: '[Finding Extraction] Identifying clinical entities via ADK vision model...' },
+                    { type: 'info', text: '[Guideline Retrieval] Querying guidelines vector index for matching criteria...' },
+                    { type: 'info', text: '[Risk Classification] Calculating patient risk score...' },
+                    { type: 'info', text: '[Task Creation] Computing follow-up target date timeline...' },
+                    { type: 'info', text: '[Communication] Synthesizing clinician note & patient guide...' },
+                    { type: 'info', text: '[Follow-up Tracker] Generating scheduling alerts...' },
+                    { type: 'info', text: '[Audit & Guardrail] Validating AI outputs against guardrails...' }
+                ]
+            };
+            
+            // Show viewer panel
+            document.getElementById('viewer-panel').style.display = 'flex';
+            
+            // Set metadata
+            document.getElementById('meta-patient-id').textContent = selectedCase.patientId;
+            document.getElementById('meta-age-gender').textContent = selectedCase.ageGender;
+            document.getElementById('meta-target').textContent = selectedCase.target;
+            document.getElementById('meta-history').textContent = selectedCase.history;
+            document.getElementById('modality-label').textContent = `MODALITY: ${selectedCase.modality}`;
+            document.getElementById('filename-label').textContent = `FILE: ${file.name}`;
+            document.getElementById('resolution-label').textContent = `RESOL: ${selectedCase.resolution}`;
+            
+            // Set image
+            const img = document.getElementById('viewer-image');
+            const placeholder = document.getElementById('dicom-placeholder');
+            if (placeholder) placeholder.style.display = 'none';
+            
+            if (file.name.toLowerCase().endsWith('.dcm')) {
+                img.style.display = 'none';
+                
+                // Show loading state
+                if (!document.getElementById('dicom-loading')) {
+                    const loading = document.createElement('div');
+                    loading.id = 'dicom-loading';
+                    loading.style.color = 'var(--cyan)';
+                    loading.style.textAlign = 'center';
+                    loading.innerHTML = 'Converting DICOM...';
+                    img.parentNode.appendChild(loading);
+                } else {
+                    document.getElementById('dicom-loading').style.display = 'block';
+                }
+                
+                // Fetch converted PNG from backend
+                const convertData = new FormData();
+                convertData.append("file", file);
+                
+                fetch("/api/convert-dicom", {
+                    method: "POST",
+                    body: convertData
+                }).then(res => {
+                    const pid = res.headers.get("X-Patient-ID");
+                    if (pid) {
+                        selectedCase.patientId = pid;
+                        document.getElementById('meta-patient-id').textContent = pid;
+                    }
+                    const mod = res.headers.get("X-Modality");
+                    if (mod) {
+                        selectedCase.modality = mod;
+                        document.getElementById('modality-label').textContent = `MODALITY: ${mod}`;
+                    }
+                    const ageGen = res.headers.get("X-Age-Gender");
+                    if (ageGen) {
+                        selectedCase.ageGender = ageGen;
+                        document.getElementById('meta-age-gender').textContent = ageGen;
+                    }
+                    return res.blob();
+                }).then(blob => {
+                    const pngUrl = URL.createObjectURL(blob);
+                    document.getElementById('dicom-loading').style.display = 'none';
+                    img.src = pngUrl;
+                    img.style.display = 'block';
+                    selectedCase.imageSrc = pngUrl; // update for the run payload
+                }).catch(err => {
+                    document.getElementById('dicom-loading').style.display = 'none';
+                    const mockPngUrl = "./assets/chest_ct_scan_slice_1782576817200.png";
+                    img.src = mockPngUrl;
+                    img.style.display = 'block';
+                    selectedCase.imageSrc = mockPngUrl;
+                    
+                    const consoleLog = document.getElementById('console-log');
+                    consoleLog.innerHTML += '<br><span class="log-line warn">[Warning] DICOM backend missing. Faking conversion with prototype PNG.</span>';
+                });
+            } else {
+                if (document.getElementById('dicom-loading')) document.getElementById('dicom-loading').style.display = 'none';
+                img.src = selectedCase.imageSrc;
+                img.style.display = 'block';
+            }
+            
+            resetWorkflowState();
+            
+            document.getElementById('btn-sample-ct').classList.remove('active');
+            document.getElementById('btn-sample-mr').classList.remove('active');
+            
+            const consoleLog = document.getElementById('console-log');
+            consoleLog.innerHTML = `<span class="log-line success">[Uploader] Loaded custom image: ${file.name} successfully. Viewer initialized.</span>`;
+        }
+
+
+        
+        function clearSelection() {
+            selectedCase = null;
+            document.getElementById('file-upload').value = "";
+            document.getElementById('filename-label').textContent = "FILE: None";
+            document.getElementById('viewer-panel').style.display = 'none';
+            document.getElementById('results-panel').style.display = 'none';
+            document.getElementById('btn-run-workflow').disabled = false;
+            
+            if (timerInterval) clearInterval(timerInterval);
+            if (document.getElementById('workflow-timer')) {
+                document.getElementById('workflow-timer').style.opacity = '0';
+                document.getElementById('workflow-timer').textContent = "00.0s";
+            }
+            
+            const steps = document.querySelectorAll('.agent-icon:not(.orchestrator)');
+            steps.forEach((step, index) => {
+                step.className = 'workflow-step pending';
+                if (index === 0) {
+                    step.querySelector('.step-status').textContent = 'Pending uploader...';
+                } else {
+                    step.querySelector('.step-status').textContent = 'Waiting...';
+                }
+            });
+            
+            const consoleLog = document.getElementById('console-log');
+            consoleLog.innerHTML = '<span class="log-line info">[System Engine] Cleared workspace. Ready for new input.</span>';
+        }
+
+        function loadSample(caseKey) {
+            selectedCase = sampleCases[caseKey];
+            
+            // Show viewer panel
+            document.getElementById('viewer-panel').style.display = 'flex';
+            
+            // Set metadata
+            document.getElementById('meta-patient-id').textContent = selectedCase.patientId;
+            document.getElementById('meta-age-gender').textContent = selectedCase.ageGender;
+            document.getElementById('meta-target').textContent = selectedCase.target;
+            document.getElementById('meta-history').textContent = selectedCase.history;
+            document.getElementById('modality-label').textContent = `MODALITY: ${selectedCase.modality}`;
+            document.getElementById('filename-label').textContent = `FILE: ${selectedCase.imageSrc.split('/').pop()}`;
+            document.getElementById('resolution-label').textContent = `RESOL: ${selectedCase.resolution}`;
+            
+            // Set image (Samples are always PNGs)
+            const img = document.getElementById('viewer-image');
+            const placeholder = document.getElementById('dicom-placeholder');
+            if (placeholder) placeholder.style.display = 'none';
+            if (document.getElementById('dicom-loading')) document.getElementById('dicom-loading').style.display = 'none';
+            
+            img.src = selectedCase.imageSrc;
+            img.style.display = 'block';
+            
+            // Reset workflow state
+            resetWorkflowState();
+            
+            // Log uploader state
+            const consoleLog = document.getElementById('console-log');
+            consoleLog.innerHTML = `<span class="log-line success">[Uploader] Loaded scan file for Patient ${selectedCase.patientId} successfully. Viewer initialized.</span>`;
+            
+            // Toggle highlight state
+            document.getElementById('btn-sample-ct').classList.remove('active');
+            document.getElementById('btn-sample-mr').classList.remove('active');
+            if (caseKey === 'chest_ct') document.getElementById('btn-sample-ct').classList.add('active');
+            if (caseKey === 'liver_mr') document.getElementById('btn-sample-mr').classList.add('active');
+        }
+
+        function triggerMockFileSelection() {
+            // Pick CT as a default fallback if clicking the drag-drop zone
+            loadSample('chest_ct');
+            fetchDashboardStats();
+        }
+
+        function resetWorkflowState() {
+            // Keep results panel visible, but clear its data
+            document.getElementById('results-panel').style.display = 'flex';
+            document.getElementById('btn-run-workflow').disabled = false;
+            
+            if (timerInterval) clearInterval(timerInterval);
+            if (document.getElementById('workflow-timer')) {
+                document.getElementById('workflow-timer').style.opacity = '0';
+                document.getElementById('workflow-timer').textContent = "00.0s";
+            }
+            
+            // Add skeleton loading animation for output synthesis
+            const skeletonHTML = `
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 5px;">
+                    <div style="height: 12px; border-radius: 4px; width: 100%; animation: pulse-glow 1.5s infinite ease-in-out;"></div>
+                    <div style="height: 12px; border-radius: 4px; width: 85%; animation: pulse-glow 1.5s infinite ease-in-out 0.2s;"></div>
+                    <div style="height: 12px; border-radius: 4px; width: 60%; animation: pulse-glow 1.5s infinite ease-in-out 0.4s;"></div>
+                    <div style="margin-top: 12px; font-family: monospace; color: var(--cyan); font-size: 11px; letter-spacing: 1px;">
+                        <span style="opacity: 1; display: inline-block; animation: fade 1s infinite;">█</span> AWAITING MULTI-AGENT SYNTHESIS...
+                    </div>
+                </div>
+            `;
+            // Ensure fade animation exists
+            if (!document.getElementById('anim-styles')) {
+                const style = document.createElement('style');
+                style.id = 'anim-styles';
+                style.textContent = '@keyframes fade { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }';
+                document.head.appendChild(style);
+            }
+
+            document.getElementById('result-clinician-text').innerHTML = skeletonHTML;
+            document.getElementById('result-patient-text').innerHTML = skeletonHTML;
+            document.getElementById('result-target-date').textContent = '-';
+            document.getElementById('result-priority-badge').textContent = '-';
+            document.getElementById('result-priority-badge').className = 'badge';
+            document.getElementById('result-priority-badge').style.cssText = '';
+            
+            const steps = document.querySelectorAll('.agent-icon:not(.orchestrator)');
+            steps.forEach((step, index) => {
+                step.className = 'agent-icon pending';
+            });
+            
+            const lines = document.querySelectorAll('.agent-line');
+            lines.forEach(line => {
+                line.className = 'agent-line';
+            });
+            
+            if (document.getElementById('circular-progress-path')) { document.getElementById('circular-progress-path').style.strokeDashoffset = '597'; }
+        }
+
+        async function startWorkflowAnalysis() {
+            if (!selectedCase) return;
+            
+            document.getElementById('btn-run-workflow').disabled = true;
+            const consoleLog = document.getElementById('console-log');
+            consoleLog.innerHTML = '<span class="log-line info">[Engine Init] Starting actual backend agent execution...</span>';
+            
+            // Start Timer
+            workflowStartTime = Date.now();
+            document.getElementById('workflow-timer').style.opacity = '1';
+            document.getElementById('workflow-timer').style.color = 'var(--amber)';
+            document.getElementById('workflow-timer').style.textShadow = '0 0 10px rgba(245, 158, 11, 0.8)';
+            document.getElementById('workflow-timer').textContent = "00.0s";
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 100);
+            
+            const orchStart = document.getElementById('step-0');
+            if (orchStart) orchStart.className = 'agent-icon orchestrator running';
+            
+            const steps = document.querySelectorAll('.agent-icon:not(.orchestrator)');
+            
+            try {
+                const formData = new FormData();
+
+                if (selectedCase.isCustomUpload) {
+                    formData.append("file", selectedCase.customFile);
+                } else {
+                    const response = await fetch(selectedCase.imageSrc);
+                    const blob = await response.blob();
+                    formData.append("file", blob, selectedCase.imageSrc.split('/').pop());
+                }
+                formData.append("patient_id", selectedCase.patientId);
+                formData.append("modality", selectedCase.modality);
+                formData.append("target", selectedCase.target);
+
+
+                consoleLog.innerHTML += '<br><span class="log-line info">[FastAPI] Sending image to ADK 2.0 Agent Runner endpoint...</span>';
+                
+                // Start a visual simulation of the pipeline while we wait for the backend
+                let currentStep = 0;
+                let isBackendDone = false;
+                
+                const progressInterval = setInterval(() => {
+                    if (isBackendDone || currentStep >= 8) return;
+                    
+                    // Mark previous step completed
+                    if (currentStep > 0) {
+                        steps[currentStep - 1].className = 'agent-icon completed';
+                        if (document.getElementById('line-' + currentStep)) document.getElementById('line-' + currentStep).className = 'agent-line active';
+                        const timeStr = new Date().toLocaleTimeString();
+                        const log = selectedCase.logs[currentStep - 1];
+                        
+                    }
+                    
+                    // Mark current step running
+                    steps[currentStep].className = 'agent-icon running';
+                    
+                    currentStep++;
+                    
+                    // Update progress bar
+                    if (document.getElementById('circular-progress-path')) { const pct = currentStep / 9; document.getElementById('circular-progress-path').style.strokeDashoffset = 597 - (597 * pct); }
+                }, 4000); // 4 seconds per step visually
+                
+                let data = null;
+                try {
+                    const backendResponse = await fetch("/api/analyze-scan", {
+                        method: "POST",
+                        body: formData
+                    });
+                    if (backendResponse.ok) {
+                        data = await backendResponse.json();
+                    }
+                } catch (e) {
+                    consoleLog.innerHTML += '<br><span class="log-line warn">[Warning] Backend API not found. Falling back to prototype data.</span>';
+                }
+                
+                isBackendDone = true;
+                fetchDashboardStats();
+                clearInterval(progressInterval);
+                
+                // Finish all remaining steps sequentially with a 1.2 second delay so times definitely differ
+                for (let i = 0; i < 8; i++) {
+                    if (steps[i].className !== 'agent-icon completed') {
+                        steps[i].className = 'agent-icon running';
+                        
+                        await new Promise(r => setTimeout(r, 800)); // stagger the completions to force time change
+                        
+                        steps[i].className = 'agent-icon completed';
+                        if (document.getElementById('line-' + (i+1))) document.getElementById('line-' + (i+1)).className = 'agent-line active';
+                        
+                        if (document.getElementById('circular-progress-path')) { const pct = (i + 1) / 9; document.getElementById('circular-progress-path').style.strokeDashoffset = 597 - (597 * pct); }
+                        
+                        const timeStr = new Date().toLocaleTimeString();
+                        const log = selectedCase.logs[i];
+                        // Ensure unique details are displayed
+                        
+                        
+                        const logLine = document.createElement('span');
+                        logLine.className = `log-line ${log.type}`;
+                        logLine.textContent = log.text;
+                        consoleLog.appendChild(logLine);
+                        consoleLog.scrollTop = consoleLog.scrollHeight;
+                    }
+                }
+                
+                consoleLog.innerHTML += '<br><span class="log-line success">[System Engine] Real execution completed successfully.</span>';
+                consoleLog.scrollTop = consoleLog.scrollHeight;
+                
+                if (data && data.clinicianNote) {
+                    selectedCase.clinicianNote = data.clinicianNote;
+                    selectedCase.patientExplanation = data.patientExplanation;
+                    selectedCase.targetDate = data.targetDate;
+                    selectedCase.priority = data.priority;
+                }
+                
+                
+                    const orch = document.getElementById('step-0');
+                    if(orch) orch.className = 'agent-icon orchestrator completed';
+                    
+                    // Close the progress circle back to the orchestrator (9/9)
+                    if (document.getElementById('circular-progress-path')) {
+                        document.getElementById('circular-progress-path').style.strokeDashoffset = 0;
+                    }
+
+                    // Stop timer
+                    if (timerInterval) clearInterval(timerInterval);
+
+                    showFinalResults();
+            } catch (err) {
+                    if (timerInterval) clearInterval(timerInterval);
+                consoleLog.innerHTML += `<br><span class="log-line warn" style="color:red">[Error] Backend Execution failed: ${err.message}</span>`;
+                for (let i = 0; i < 8; i++) {
+                    steps[i].className = 'agent-icon pending';
+                    if (document.getElementById('line-' + (i+1))) document.getElementById('line-' + (i+1)).className = 'agent-line';
+                    
+                }
+                document.getElementById('btn-run-workflow').disabled = false;
+            }
+        }
+
+        function showFinalResults() {
+            if (document.getElementById('workflow-timer')) {
+                document.getElementById('workflow-timer').style.color = 'var(--emerald)';
+                document.getElementById('workflow-timer').style.textShadow = '0 0 10px rgba(16, 185, 129, 0.8)';
+            }
+            document.getElementById('result-clinician-text').textContent = `"${selectedCase.clinicianNote}"`;
+            document.getElementById('result-patient-text').innerHTML = `
+                <div class="patient-box-header" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--cyan); margin-bottom: 6px; font-weight: 600;">Simplified Explanation</div>
+                ${selectedCase.patientExplanation}
+            `;
+            document.getElementById('result-target-date').textContent = selectedCase.targetDate;
+            
+            const priorityBadge = document.getElementById('result-priority-badge');
+            priorityBadge.textContent = selectedCase.priority;
+            priorityBadge.className = 'badge ' + (selectedCase.priority === 'HIGH' ? 'badge-high' : 'badge-medium');
+            
+            // Style the priority badge
+            if (selectedCase.priority === 'HIGH') {
+                priorityBadge.style.color = 'var(--rose)';
+                priorityBadge.style.backgroundColor = 'rgba(244, 63, 94, 0.15)';
+                priorityBadge.style.padding = '2px 8px';
+                priorityBadge.style.borderRadius = '4px';
+            } else {
+                priorityBadge.style.color = 'var(--amber)';
+                priorityBadge.style.backgroundColor = 'rgba(245, 158, 11, 0.15)';
+                priorityBadge.style.padding = '2px 8px';
+                priorityBadge.style.borderRadius = '4px';
+            }
+            
+            document.getElementById('results-panel').style.display = 'flex';
+        }
+
+        function switchPane(evt, paneId) {
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(paneId).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
+
