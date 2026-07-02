@@ -1,3 +1,14 @@
+"""
+================================================================================
+ File Name:    test_finding_extraction_agent.py
+ Author:       Sunil Kumar Gorle
+ 
+ Description:  
+   Unit tests for the Finding Extraction Agent, validating extraction of
+   clinical entities and accurate resolution of medical negations.
+================================================================================
+"""
+
 from google.genai import types
 import pytest
 from google.adk.runners import InMemoryRunner

@@ -1,3 +1,14 @@
+"""
+================================================================================
+ File Name:    test_security.py
+ Author:       Sunil Kumar Gorle
+ 
+ Description:  
+   Security evaluation tests verifying the pipeline's resilience against
+   Prompt Injection (jailbreaking) and XSS payload attacks.
+================================================================================
+"""
+
 from google.genai import types
 import pytest
 from google.adk.runners import InMemoryRunner

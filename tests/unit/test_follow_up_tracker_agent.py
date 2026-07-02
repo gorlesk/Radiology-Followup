@@ -1,3 +1,14 @@
+"""
+================================================================================
+ File Name:    test_follow_up_tracker_agent.py
+ Author:       Sunil Kumar Gorle
+ 
+ Description:  
+   Unit tests for the Follow-up Tracker Agent, checking initial
+   scheduling state registration and escalation rules.
+================================================================================
+"""
+
 from google.genai import types
 import pytest
 from google.adk.runners import InMemoryRunner

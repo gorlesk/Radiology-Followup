@@ -1,3 +1,14 @@
+"""
+================================================================================
+ File Name:    test_audit_guardrail_agent.py
+ Author:       Sunil Kumar Gorle
+ 
+ Description:  
+   Unit tests for the Audit & Guardrail Agent, verifying final safety
+   checkpoints, timeline alignment, and hallucination detection.
+================================================================================
+"""
+
 from google.genai import types
 import pytest
 from google.adk.runners import InMemoryRunner

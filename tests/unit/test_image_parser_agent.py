@@ -1,3 +1,14 @@
+"""
+================================================================================
+ File Name:    test_image_parser_agent.py
+ Author:       Sunil Kumar Gorle
+ 
+ Description:  
+   Unit tests for the Image Parser Agent, validating multimodal
+   capabilities to parse findings directly from medical images.
+================================================================================
+"""
+
 import pytest
 import pathlib
 from google.genai import types

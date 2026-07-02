@@ -1,3 +1,14 @@
+"""
+================================================================================
+ File Name:    test_ehr_mcp.py
+ Author:       Sunil Kumar Gorle
+ 
+ Description:  
+   Simulates Model Context Protocol (MCP) interactions with a mock EHR
+   system to test read and write actions.
+================================================================================
+"""
+
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
