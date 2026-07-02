@@ -41,6 +41,7 @@ Radiology-Followup/
 ### 🧠 How Agents Interact
 
 ![Agents Workflow](./Radiology-Followup-Agents-Workflow.png)
+
 The pipeline operates as a **Sequential State Graph**. Rather than conversational agents talking to each other randomly, the system uses a highly structured, deterministic orchestration model:
 1. **The Orchestrator 🧠**: A central workflow engine acts as the primary orchestrator. It is responsible for initiating the very first call in the pipeline when a user uploads a scan. Critically, after the final agent completes its review, the orchestrator gets control back at the end of the workflow, capturing the final compiled state to deliver safely back to the user interface.
 2. **Shared State Object**: A central, strongly-typed `State` object acts as the strict memory repository for the entire pipeline.
@@ -97,7 +98,6 @@ To evaluate the pipeline for **Safety** and **Hallucination** (i.e. ensuring the
 ``bash
 uv run agents-cli eval run --dataset tests/eval/datasets/medical-eval.json --metrics safety,hallucination
 ``
-![Interactive Uploader](./Interactive-Uploader-Radiology-Followup.png)
 
 Alternatively, you can interact with your multi-agent pipeline in real-time through a local terminal chat interface:
 ```bash
