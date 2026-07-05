@@ -88,9 +88,19 @@ To interact with the system via a web interface and process your own scans:
    ```bash
    uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
    ```
-2. Open your browser and navigate to: [http://localhost:8000/](http://localhost:8000/)
+2. Open your browser and navigate to: [http://localhost:8000/](http://localhost:8000/) then UI launches as shown below:
+
 
 ![Interactive UI Home](./Interactive-UI-Home-Radiology-Followup.png)
+
+3. Use the DICOM files from `tests\testdata` and click on the "Run workflow Analysis" button to start the flow. Workflow can also be run using the  `Chest CT` or `Live MR` buttons, which uses png files located in `assets` directory. 
+
+![Browse Files from UI Home](./Interactive-Uploader-Radiology-Followup.png)
+
+
+Note: While using any DICOM (.dcm format) or image files (.png) files, they should have annotations for the findings to run workflow successfully.
+
+
 
 ### Running Semantic Evaluations
 To evaluate the pipeline for **Safety** and **Hallucination** (i.e. ensuring the agent did not invent fake clinical guidelines or succumb to a prompt injection attack), run the following command:
@@ -116,7 +126,7 @@ uv run pytest tests/unit/
 
 **Expected Successful Output:**
 
-![alt text](image.png)
+![alt text](unittest_results.png)
 
 
 ### Testing the Simulated MCP Server
@@ -129,4 +139,4 @@ uv run tests/test_ehr_mcp.py
 
 **Expected Successful Output:**
 
-![alt text](image-1.png)
+![alt text](mcptest_results.png)
